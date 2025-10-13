@@ -80,7 +80,7 @@ impl RobloxRequireMode {
             source_path.display(),
         );
 
-        if let Some((sourcemap, sourcemap_path)) = self
+        let sourcemap_tried = if let Some((sourcemap, sourcemap_path)) = self
             .cached_sourcemap
             .as_ref()
             .zip(self.rojo_sourcemap.as_ref())
@@ -99,9 +99,10 @@ impl RobloxRequireMode {
                 if let Some(instance_path) =
                     sourcemap.get_instance_path(&source_path, &require_relative_to_sourcemap)
                 {
-                    Ok(Some(Arguments::default().with_argument(
-                        instance_path.convert(&self.indexing_style),
-                    )))
+                    return Ok(Some(
+                        Arguments::default()
+                            .with_argument(instance_path.convert(&self.indexing_style)),
+                    ));
                 } else {
                     match (
                         sourcemap.exists(&source_path),
@@ -128,18 +129,19 @@ impl RobloxRequireMode {
                             );
                         }
                     }
-                    Ok(None)
                 }
             } else {
                 log::debug!(
                     "unable to get relative path from sourcemap for `{}`",
                     require_path.display()
                 );
-                Ok(None)
             }
-        } else if let Some(relative_require_path) =
-            get_relative_path(require_path, &source_path, true)?
-        {
+            true
+        } else {
+            false
+        };
+
+        if let Some(relative_require_path) = get_relative_path(require_path, &source_path, true)? {
             log::trace!(
                 "make require path relative to source: `{}`",
                 relative_require_path.display()
@@ -221,14 +223,18 @@ impl RobloxRequireMode {
                 )))
             }
         } else {
-            Err(DarkluaError::custom(format!(
-                concat!(
-                    "unable to convert path `{}` from `{}` without a sourcemap: unable to ",
-                    "make the require path relative to the source file"
-                ),
-                require_path.display(),
-                source_path.display(),
-            )))
+            if sourcemap_tried {
+                Ok(None)
+            } else {
+                Err(DarkluaError::custom(format!(
+                    concat!(
+                        "unable to convert path `{}` from `{}` without a sourcemap: unable to ",
+                        "make the require path relative to the source file"
+                    ),
+                    require_path.display(),
+                    source_path.display(),
+                )))
+            }
         }
     }
 }
