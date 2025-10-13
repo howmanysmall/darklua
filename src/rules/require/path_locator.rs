@@ -1,7 +1,10 @@
 use std::path::{Path, PathBuf};
 
 use super::{path_iterator, PathRequireMode};
-use crate::{rules::require::path_utils::is_require_relative, utils, DarkluaError, Resources};
+use crate::{
+    rules::require::path_utils::{get_relative_parent_path, is_require_relative},
+    utils, DarkluaError, Resources,
+};
 
 #[derive(Debug)]
 pub(crate) struct RequirePathLocator<'a, 'b, 'resources> {
@@ -43,18 +46,20 @@ impl super::PathLocator for RequirePathLocator<'_, '_, '_> {
             new_path.push(path);
             path = new_path;
         } else if !path.is_absolute() {
-            {
-                let mut components = path.components();
-                let root = components.next().ok_or_else(|| {
-                    DarkluaError::invalid_resource_path(path.display().to_string(), "path is empty")
-                })?;
-                let source_name = utils::convert_os_string(root.as_os_str()).map_err(|err| {
-                    err.context(format!(
-                        "cannot convert source name to utf-8 in `{}`",
-                        path.display(),
-                    ))
-                })?;
+            let mut components = path.components();
+            let root = components.next().ok_or_else(|| {
+                DarkluaError::invalid_resource_path(path.display().to_string(), "path is empty")
+            })?;
+            let source_name = utils::convert_os_string(root.as_os_str()).map_err(|err| {
+                err.context(format!(
+                    "cannot convert source name to utf-8 in `{}`",
+                    path.display(),
+                ))
+            })?;
 
+            if source_name == "@self" {
+                path = get_relative_parent_path(source).join(components);
+            } else {
                 let mut extra_module_location = self
                     .path_require_mode
                     .get_source(source_name, self.extra_module_relative_location)

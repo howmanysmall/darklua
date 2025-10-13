@@ -136,6 +136,8 @@ test_rule!(
         => "local module = require(script.Parent['while'])",
     sibling_module_with_name_with_space("local module = require('./a module.lua')")
         => "local module = require(script.Parent['a module'])",
+    sibling_module_with_self("local module = require('@self/module.lua')")
+        => "local module = require(script.Parent.module)",
 );
 
 test_rule!(
