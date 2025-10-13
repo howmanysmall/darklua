@@ -59,7 +59,7 @@ impl super::PathLocator for RequirePathLocator<'_, '_, '_> {
 
             if source_name == "@self" {
                 path = get_relative_parent_path(source).join(components);
-            } else if source_name.starts_with("@") {
+            } else {
                 let mut extra_module_location = self
                     .path_require_mode
                     .get_source(source_name, self.extra_module_relative_location)
