@@ -4,3 +4,4 @@
 .vscode
 
 bench_content/**/
+cargo-flamegraph.trace/
