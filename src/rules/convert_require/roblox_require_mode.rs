@@ -222,19 +222,17 @@ impl RobloxRequireMode {
                     relative_require_path.display(),
                 )))
             }
+        } else if sourcemap_tried {
+            Ok(None)
         } else {
-            if sourcemap_tried {
-                Ok(None)
-            } else {
-                Err(DarkluaError::custom(format!(
-                    concat!(
-                        "unable to convert path `{}` from `{}` without a sourcemap: unable to ",
-                        "make the require path relative to the source file"
-                    ),
-                    require_path.display(),
-                    source_path.display(),
-                )))
-            }
+            Err(DarkluaError::custom(format!(
+                concat!(
+                    "unable to convert path `{}` from `{}` without a sourcemap: unable to ",
+                    "make the require path relative to the source file"
+                ),
+                require_path.display(),
+                source_path.display(),
+            )))
         }
     }
 }
